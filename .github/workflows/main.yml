@@ -1,45 +1,28 @@
-name: 🔍 Validate Commit Messages
+name: 🧾 Validate Pull Request Title
 
 on:
-  push:
-    branches: [ main, develop, feature/* ]
   pull_request:
-    types: [opened, synchronize, edited, reopened]
+    types: [opened, edited, reopened, synchronize]
 
 jobs:
-  validate-commits:
+  validate-pr-title:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: 🔎 Validate commit messages
+      - name: 🔎 Validate PR title format
         run: |
-          echo "Validando el commit..."
-          regex="^(Feature|Patch|Delete):"
-          
-          # Obtener los mensajes de los commits en el push o PR
-          commits=$(git log --format=%s ${{ github.event.before }}..${{ github.sha }})
-          
-          if [ -z "$commits" ]; then
-            echo "No commits found, skipping validation."
-            exit 0
-          fi
+          title="${{ github.event.pull_request.title }}"
+          echo "🔍 PR Title: $title"
 
-          invalid=0
-          while IFS= read -r msg; do
-            echo "Checking: '$msg'"
-            if ! [[ $msg =~ $regex ]]; then
-              echo "❌ Commit inválido: '$msg'"
-              invalid=1
-            else
-              echo "✅ Commit válido"
-            fi
-          done <<< "$commits"
+          # Expresión regular para validar las categorías permitidas
+          regex="^(Feature|Patch|Refactor|Docs|Delete|Chore|Test):"
 
-          if [ $invalid -eq 1 ]; then
-            echo "🚫 Error: Todos los commits deben comenzar con 'Feature:', 'Patch:' o 'Delete:'"
+          if [[ ! "$title" =~ $regex ]]; then
+            echo "🚫 Invalid PR title format."
+            echo "PR title must start with one of the following prefixes:"
+            echo "Feature:, Patch:, Refactor:, Docs:, Delete:, Chore:, or Test:"
+            echo ""
+            echo "Example: Feature: add autoscaling module"
             exit 1
+          else
+            echo "✅ PR title format is valid."
           fi
-        
-    
-      
