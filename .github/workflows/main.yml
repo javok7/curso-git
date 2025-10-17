@@ -1,0 +1,45 @@
+name: 🔍 Validate Commit Messages
+
+on:
+  push:
+    branches: [*]
+  pull_request:
+    types: [opened, synchronize, edited, reopened]
+
+jobs:
+  validate-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: 🔎 Validate commit messages
+        run: |
+          echo "Validando el commit..."
+          regex="^(Feature|Patch|Delete):"
+          
+          # Obtener los mensajes de los commits en el push o PR
+          commits=$(git log --format=%s ${{ github.event.before }}..${{ github.sha }})
+          
+          if [ -z "$commits" ]; then
+            echo "No commits found, skipping validation."
+            exit 0
+          fi
+
+          invalid=0
+          while IFS= read -r msg; do
+            echo "Checking: '$msg'"
+            if ! [[ $msg =~ $regex ]]; then
+              echo "❌ Commit inválido: '$msg'"
+              invalid=1
+            else
+              echo "✅ Commit válido"
+            fi
+          done <<< "$commits"
+
+          if [ $invalid -eq 1 ]; then
+            echo "🚫 Error: Todos los commits deben comenzar con 'Feature:', 'Patch:' o 'Delete:'"
+            exit 1
+          fi
+        
+    
+      
